@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backpacking Budget Tracker</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    background: #0a0f1a;
+    color: #e8eaf0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  .header {
+    text-align: center;
+    padding: 24px 0 20px;
+  }
+
+  .header .label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #4fc3a1;
+    margin-bottom: 8px;
+  }
+
+  .header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: #131929;
+    border: 1px solid #1e2d45;
+    border-radius: 14px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+
+  .stat-card .stat-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4a5568;
+    margin-bottom: 6px;
+  }
+
+  .stat-card .stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #4fc3a1;
+  }
+
+  .stat-card .stat-sub {
+    font-size: 10px;
+    color: #4a5568;
+    margin-top: 2px;
+  }
+
+  /* Today Card */
+  .today-card {
+    background: #131929;
+    border: 1px solid #1e2d45;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .today-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #4fc3a1, #3b82f6);
+  }
+
+  .today-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+
+  .today-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4a5568;
+    margin-bottom: 4px;
+  }
+
+  .today-amount {
+    font-size: 36px;
+    font-weight: 800;
+    color: #ffffff;
+  }
+
+  .today-limit {
+    text-align: right;
+    font-size: 11px;
+    color: #4a5568;
+  }
+
+  .today-remaining {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4fc3a1;
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: #1e2d45;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #4fc3a1, #3b82f6);
+    transition: width 0.5s ease;
+  }
+
+  .progress-fill.warning { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+
+  /* Budget Overview */
+  .overview-card {
+    background: #131929;
+    border: 1px solid #1e2d45;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .overview-item .ov-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4a5568;
+    margin-bottom: 6px;
+  }
+
+  .overview-item .ov-value {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .ov-value.spent { color: #f87171; }
+  .ov-value.remaining { color: #4fc3a1; }
+
+  .ov-sub {
+    font-size: 10px;
+    color: #4a5568;
+    margin-top: 4px;
+  }
+
+  /* Input Card */
+  .input-card {
+    background: #131929;
+    border: 1px solid #1e2d45;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .input-card h3 {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4a5568;
+    margin-bottom: 16px;
+  }
+
+  .currency-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .currency-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #1e2d45;
+    background: #0a0f1a;
+    color: #4a5568;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .currency-btn.active {
+    background: #4fc3a1;
+    color: #0a0f1a;
+    border-color: #4fc3a1;
+  }
+
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .input-group label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #4a5568;
+  }
+
+  .input-group input, .input-group select {
+    background: #0a0f1a;
+    border: 1px solid #1e2d45;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #e8eaf0;
+    font-size: 15px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-group input:focus, .input-group select:focus {
+    border-color: #4fc3a1;
+  }
+
+  .input-group select option { background: #131929; }
+
+  .note-input {
+    background: #0a0f1a;
+    border: 1px solid #1e2d45;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #e8eaf0;
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .note-input:focus { border-color: #4fc3a1; }
+  .note-input::placeholder { color: #2d3748; }
+
+  .add-btn {
+    width: 100%;
+    padding: 14px;
+    background: #4fc3a1;
+    color: #0a0f1a;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .add-btn:active { opacity: 0.8; }
+
+  /* Categories */
+  .categories-card {
+    background: #131929;
+    border: 1px solid #1e2d45;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .categories-card h3 {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4a5568;
+    margin-bottom: 16px;
+  }
+
+  .category-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #1e2d45;
+  }
+
+  .category-row:last-child { border-bottom: none; }
+
+  .category-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .category-icon { font-size: 18px; }
+
+  .category-name {
+    font-size: 14px;
+    color: #a0aec0;
+  }
+
+  .category-amount {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e8eaf0;
+  }
+
+  .category-idr {
+    font-size: 10px;
+    color: #4a5568;
+    text-align: right;
+  }
+
+  /* History */
+  .history-card {
+    background: #131929;
+    border: 1px solid #1e2d45;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .history-header h3 {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4a5568;
+  }
+
+  .clear-btn {
+    font-size: 11px;
+    color: #f87171;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid #1e2d45;
+  }
+
+  .history-item:last-child { border-bottom: none; }
+
+  .history-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .history-icon { font-size: 20px; margin-top: 1px; }
+
+  .history-category {
+    font-size: 13px;
+    color: #a0aec0;
+    text-transform: capitalize;
+  }
+
+  .history-date {
+    font-size: 11px;
+    color: #2d3748;
+    margin-top: 2px;
+  }
+
+  .history-note {
+    font-size: 11px;
+    color: #4a5568;
+    margin-top: 2px;
+    font-style: italic;
+  }
+
+  .history-right { text-align: right; }
+
+  .history-amount {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f87171;
+  }
+
+  .history-eur {
+    font-size: 10px;
+    color: #4a5568;
+    margin-top: 2px;
+  }
+
+  .delete-entry {
+    background: none;
+    border: none;
+    color: #2d3748;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 2px;
+    display: block;
+    margin-left: auto;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: #2d3748;
+    padding: 20px 0;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="label">🌴 Backpacking Trip</div>
+  <h1>Budget Tracker</h1>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">Gesamt</div>
+    <div class="stat-value">2.000€</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Tageslimit</div>
+    <div class="stat-value" id="daily-limit-stat">43€ / Tag</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Reisetag</div>
+    <div class="stat-value" id="travel-day-stat">1 / 46</div>
+  </div>
+</div>
+
+<!-- Today -->
+<div class="today-card">
+  <div class="today-header">
+    <div>
+      <div class="today-label">HEUTE</div>
+      <div class="today-amount" id="today-amount">0€</div>
+    </div>
+    <div class="today-limit">
+      <div style="color:#4a5568; font-size:11px; margin-bottom:4px;">Limit: <span id="limit-display">43€</span> / Tag</div>
+      <div class="today-remaining" id="today-remaining">noch 43€ übrig</div>
+    </div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="today-progress" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- Overview -->
+<div class="overview-card">
+  <div class="overview-item">
+    <div class="ov-label">Ausgegeben</div>
+    <div class="ov-value spent" id="total-spent">0€</div>
+    <div class="ov-sub" id="total-spent-pct">0% von 2.000€</div>
+  </div>
+  <div class="overview-item">
+    <div class="ov-label">Noch übrig</div>
+    <div class="ov-value remaining" id="total-remaining">2.000€</div>
+    <div class="ov-sub" id="daily-possible">≈ 43€/Tag noch möglich<br><span id="days-remaining">46 Tage verbleibend</span></div>
+  </div>
+</div>
+
+<!-- Input -->
+<div class="input-card">
+  <h3>Ausgabe erfassen</h3>
+  
+  <div class="currency-toggle">
+    <button class="currency-btn active" id="btn-idr" onclick="setCurrency('IDR')">🇮🇩 IDR (Rupiah)</button>
+    <button class="currency-btn" id="btn-eur" onclick="setCurrency('EUR')">🇪🇺 EUR (Euro)</button>
+  </div>
+
+  <div class="input-row">
+    <div class="input-group">
+      <label>Datum</label>
+      <input type="date" id="expense-date">
+    </div>
+    <div class="input-group">
+      <label>Betrag (<span id="currency-label">IDR</span>)</label>
+      <input type="number" id="expense-amount" placeholder="z.B. 50000">
+    </div>
+  </div>
+
+  <div class="input-group" style="margin-bottom:10px;">
+    <label>Kategorie</label>
+    <select id="expense-category">
+      <option value="essen">🍜 Essen</option>
+      <option value="unterkunft">🏨 Unterkunft</option>
+      <option value="transport">🚌 Transport</option>
+      <option value="aktivitaeten">🎯 Aktivitäten</option>
+      <option value="shopping">🛍️ Shopping</option>
+      <option value="gesundheit">💊 Gesundheit</option>
+      <option value="sonstiges">📦 Sonstiges</option>
+    </select>
+  </div>
+
+  <input type="text" class="note-input" id="expense-note" placeholder="Notiz (optional)">
+
+  <button class="add-btn" onclick="addExpense()">+ Hinzufügen</button>
+</div>
+
+<!-- Categories -->
+<div class="categories-card">
+  <h3>Nach Kategorie</h3>
+  <div id="categories-list"></div>
+</div>
+
+<!-- History -->
+<div class="history-card">
+  <div class="history-header">
+    <h3>Verlauf</h3>
+  </div>
+  <div id="history-list"><div class="empty-state">Noch keine Ausgaben 🌴</div></div>
+</div>
+
+<script>
+const BUDGET = 2000;
+const START_DATE = new Date('2026-07-26');
+const END_DATE = new Date('2026-09-10');
+const TOTAL_DAYS = Math.round((END_DATE - START_DATE) / (1000*60*60*24));
+const DAILY_LIMIT = Math.round(BUDGET / TOTAL_DAYS);
+const IDR_RATE = 20000;
+
+let expenses = JSON.parse(localStorage.getItem('backpack_expenses_friend') || '[]');
+let currency = 'IDR';
+
+const ICONS = {
+  essen: '🍜', unterkunft: '🏨', transport: '🚌',
+  aktivitaeten: '🎯', shopping: '🛍️', gesundheit: '💊', sonstiges: '📦'
+};
+
+function setCurrency(c) {
+  currency = c;
+  document.getElementById('btn-idr').classList.toggle('active', c === 'IDR');
+  document.getElementById('btn-eur').classList.toggle('active', c === 'EUR');
+  document.getElementById('currency-label').textContent = c;
+}
+
+function toEUR(amount, cur) {
+  return cur === 'IDR' ? amount / IDR_RATE : amount;
+}
+
+function formatEUR(eur) {
+  return eur.toFixed(2) + '€';
+}
+
+function formatIDR(idr) {
+  if (idr >= 1000000) return (idr/1000000).toFixed(1) + 'Jt IDR';
+  if (idr >= 1000) return Math.round(idr/1000) + 'k IDR';
+  return Math.round(idr) + ' IDR';
+}
+
+function getTodayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getTravelDay() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const start = new Date(START_DATE);
+  start.setHours(0,0,0,0);
+  return Math.max(1, Math.round((today - start) / (1000*60*60*24)) + 1);
+}
+
+function getDaysRemaining() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const end = new Date(END_DATE);
+  end.setHours(0,0,0,0);
+  return Math.max(0, Math.round((end - today) / (1000*60*60*24)));
+}
+
+function addExpense() {
+  const date = document.getElementById('expense-date').value;
+  const amount = parseFloat(document.getElementById('expense-amount').value);
+  const category = document.getElementById('expense-category').value;
+  const note = document.getElementById('expense-note').value;
+
+  if (!date || !amount || isNaN(amount)) return;
+
+  const eurAmount = toEUR(amount, currency);
+  expenses.unshift({ date, amount, currency, eurAmount, category, note, id: Date.now() });
+  localStorage.setItem('backpack_expenses_friend', JSON.stringify(expenses));
+
+  document.getElementById('expense-amount').value = '';
+  document.getElementById('expense-note').value = '';
+  render();
+}
+
+function deleteExpense(id) {
+  expenses = expenses.filter(e => e.id !== id);
+  localStorage.setItem('backpack_expenses_friend', JSON.stringify(expenses));
+  render();
+}
+
+function clearAll() {
+  if (confirm('Alle Ausgaben löschen?')) {
+    expenses = [];
+    localStorage.setItem('backpack_expenses_friend', JSON.stringify(expenses));
+    render();
+  }
+}
+
+function render() {
+  const today = getTodayStr();
+  const travelDay = getTravelDay();
+  const daysLeft = getDaysRemaining();
+
+  const totalSpentEUR = expenses.reduce((s, e) => s + e.eurAmount, 0);
+  const todaySpentEUR = expenses.filter(e => e.date === today).reduce((s, e) => s + e.eurAmount, 0);
+  const remaining = BUDGET - totalSpentEUR;
+  const todayRemaining = DAILY_LIMIT - todaySpentEUR;
+  const dynamicDaily = daysLeft > 0 ? remaining / daysLeft : 0;
+  const progressPct = Math.min(100, (todaySpentEUR / DAILY_LIMIT) * 100);
+
+  // Stats row
+  document.getElementById('travel-day-stat').textContent = travelDay + ' / ' + TOTAL_DAYS;
+  document.getElementById('daily-limit-stat').textContent = DAILY_LIMIT + '€ / Tag';
+
+  // Today
+  document.getElementById('today-amount').textContent = todaySpentEUR.toFixed(2) + '€';
+  document.getElementById('today-remaining').textContent = 'noch ' + Math.max(0, todayRemaining).toFixed(2) + '€ übrig';
+  const bar = document.getElementById('today-progress');
+  bar.style.width = progressPct + '%';
+  bar.className = 'progress-fill' + (progressPct > 80 ? ' warning' : '');
+
+  // Overview
+  document.getElementById('total-spent').textContent = totalSpentEUR.toFixed(0) + '€';
+  document.getElementById('total-spent-pct').textContent = (totalSpentEUR/BUDGET*100).toFixed(1) + '% von ' + BUDGET + '€';
+  document.getElementById('total-remaining').textContent = remaining.toFixed(0) + '€';
+  document.getElementById('daily-possible').innerHTML = '≈ ' + dynamicDaily.toFixed(0) + '€/Tag noch möglich<br><span id="days-remaining">' + daysLeft + ' Tage verbleibend</span>';
+
+  // Categories
+  const cats = {};
+  expenses.forEach(e => {
+    if (!cats[e.category]) cats[e.category] = { eur: 0, idr: 0 };
+    cats[e.category].eur += e.eurAmount;
+    cats[e.category].idr += e.currency === 'IDR' ? e.amount : e.amount * IDR_RATE;
+  });
+
+  const catList = document.getElementById('categories-list');
+  if (Object.keys(cats).length === 0) {
+    catList.innerHTML = '<div class="empty-state">Noch keine Ausgaben</div>';
+  } else {
+    catList.innerHTML = Object.entries(cats).sort((a,b) => b[1].eur - a[1].eur).map(([cat, val]) => `
+      <div class="category-row">
+        <div class="category-left">
+          <span class="category-icon">${ICONS[cat] || '📦'}</span>
+          <span class="category-name">${cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+        </div>
+        <div style="text-align:right">
+          <div class="category-amount">${val.eur.toFixed(2)}€</div>
+          <div class="category-idr">(${formatIDR(val.idr)})</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // History grouped by day
+  const histList = document.getElementById('history-list');
+  if (expenses.length === 0) {
+    histList.innerHTML = '<div class="empty-state">Noch keine Ausgaben 🌴</div>';
+  } else {
+    // Group by date
+    const grouped = {};
+    expenses.forEach(e => {
+      if (!grouped[e.date]) grouped[e.date] = [];
+      grouped[e.date].push(e);
+    });
+
+    const sortedDates = Object.keys(grouped).sort((a,b) => b.localeCompare(a));
+
+    function getTravelDayForDate(dateStr) {
+      const d = new Date(dateStr);
+      d.setHours(0,0,0,0);
+      const s = new Date(START_DATE);
+      s.setHours(0,0,0,0);
+      return Math.max(1, Math.round((d - s) / (1000*60*60*24)) + 1);
+    }
+
+    function formatDateDE(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
+    }
+
+    histList.innerHTML = sortedDates.map(date => {
+      const dayExpenses = grouped[date];
+      const dayTotal = dayExpenses.reduce((s, e) => s + e.eurAmount, 0);
+      const dayNum = getTravelDayForDate(date);
+
+      const entriesHtml = dayExpenses.map(e => `
+        <div class="history-item">
+          <div class="history-left">
+            <span class="history-icon">${ICONS[e.category] || '📦'}</span>
+            <div>
+              <div class="history-category">${e.category.charAt(0).toUpperCase() + e.category.slice(1)}${e.note ? ' · ' + e.note : ''}</div>
+            </div>
+          </div>
+          <div class="history-right">
+            <div class="history-amount" style="font-size:13px;">${e.currency === 'IDR' ? formatIDR(e.amount) + ' =' : ''} ${e.eurAmount.toFixed(2)}€</div>
+            <button class="delete-entry" onclick="deleteExpense(${e.id})">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      return `
+        <div style="margin-bottom:4px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 6px;">
+            <div style="font-size:12px;font-weight:700;color:#4fc3a1;">${formatDateDE(date)} · Tag ${dayNum}</div>
+            <div style="font-size:14px;font-weight:700;color:#4fc3a1;">${dayTotal.toFixed(2)}€</div>
+          </div>
+          ${entriesHtml}
+        </div>
+      `;
+    }).join('<div style="height:1px;background:#1e2d45;margin:4px 0;"></div>');
+  }
+}
+
+// Set today's date as default
+document.getElementById('expense-date').value = getTodayStr();
+render();
+</script>
+</body>
+</html>
